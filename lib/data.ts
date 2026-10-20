@@ -28,6 +28,10 @@ export function toProfile(row: ProfileRow): Profile {
   return { id: row.id, displayName: row.display_name, username: row.username, initials: initials(row.display_name), tone: 'bg-[#dec4f7]', status: 'Listening now' };
 }
 
+export type FriendshipView = { id: string; status: 'pending' | 'accepted' | 'declined' | 'blocked'; requestedBy: string; other: Profile };
+export type GroupInvitationView = { id: string; groupId: string; groupName: string; inviter: Profile };
+export type RecentScrobble = { title: string; artist: string; listenedAt: string };
+
 function formatUpdated(value: string | null) {
   return value ? new Date(value).toLocaleDateString() : 'not refreshed';
 }
@@ -88,13 +92,20 @@ export async function getBlend(id: string) {
 }
 
 export async function getFriends() {
+  return (await getFriendships()).filter((friendship) => friendship.status === 'accepted').map((friendship) => friendship.other);
+}
+
+export async function getFriendships() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
-  const { data, error } = await supabase.from('friendships').select('user_low, user_high, profiles_low:profiles!friendships_user_low_fkey(id, username, display_name, avatar_url), profiles_high:profiles!friendships_user_high_fkey(id, username, display_name, avatar_url)').eq('status', 'accepted').or(`user_low.eq.${user.id},user_high.eq.${user.id}`);
+  const { data, error } = await supabase.from('friendships').select('id, status, requested_by, user_low, user_high, profiles_low:profiles!friendships_user_low_fkey(id, username, display_name, avatar_url), profiles_high:profiles!friendships_user_high_fkey(id, username, display_name, avatar_url)').or(`user_low.eq.${user.id},user_high.eq.${user.id}`);
   if (error) throw new Error(error.message);
   return (data ?? []).map((friendship) => {
     const raw = friendship as {
+      id: string;
+      status: FriendshipView['status'];
+      requested_by: string;
       user_low: string;
       profiles_low: ProfileRow | ProfileRow[];
       profiles_high: ProfileRow | ProfileRow[];
@@ -105,6 +116,40 @@ export async function getFriends() {
       profiles_high: Array.isArray(raw.profiles_high) ? raw.profiles_high[0] : raw.profiles_high
     };
     if (!row.profiles_low || !row.profiles_high) throw new Error('Friend profile data is incomplete');
-    return toProfile(row.user_low === user.id ? row.profiles_high : row.profiles_low);
+    return { id: raw.id, status: raw.status, requestedBy: raw.requested_by, other: toProfile(row.user_low === user.id ? row.profiles_high : row.profiles_low) };
   });
+}
+
+export async function getGroupInvitations() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase.from('group_invitations').select('id, group_id, groups(name), profiles!group_invitations_inviter_id_fkey(id, username, display_name, avatar_url)').eq('invitee_id', user.id).eq('status', 'pending').order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((invitation) => {
+    const group = Array.isArray(invitation.groups) ? invitation.groups[0] : invitation.groups;
+    const inviter = Array.isArray(invitation.profiles) ? invitation.profiles[0] : invitation.profiles;
+    return { id: invitation.id, groupId: invitation.group_id, groupName: group?.name ?? 'Shared group', inviter: toProfile(inviter as ProfileRow) };
+  }) as GroupInvitationView[];
+}
+
+export async function getOwnedGroups() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase.from('groups').select('id, name').eq('owner_id', user.id).order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getRecentScrobbles() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase.from('listening_signals').select('artist, listened_at, source_payload').eq('user_id', user.id).order('listened_at', { ascending: false }).limit(6);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((signal) => {
+    const payload = signal.source_payload as { name?: string } | null;
+    return { title: payload?.name ?? 'Recent listen', artist: signal.artist ?? 'Unknown artist', listenedAt: signal.listened_at ?? '' };
+  }) as RecentScrobble[];
 }

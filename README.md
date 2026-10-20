@@ -28,18 +28,20 @@ npm run build
 ### 3. Create and initialize the Supabase database
 
 1. Create a free project at https://supabase.com/ .
-2. Open **SQL Editor**, choose a new query, paste the complete contents of `supabase/migrations/20261020000000_initial.sql`, and click **Run**.
-3. In **Table Editor**, confirm that the `profiles`, `friendships`, `groups`, `group_members`, `blends`, `tracks`, `blend_tracks`, `provider_connections`, `listening_signals`, and `refresh_jobs` tables exist.
+2. Open **SQL Editor**, run `supabase/migrations/20261020000000_initial.sql`, then run `supabase/migrations/20261021000000_social_flows.sql`.
+3. In **Table Editor**, confirm that the `profiles`, `friendships`, `groups`, `group_members`, `group_invitations`, `blends`, `tracks`, `blend_tracks`, `provider_connections`, `listening_signals`, and `refresh_jobs` tables exist.
 4. In **Project Settings → API**, copy the project URL and anon key.
-5. Keep the service role key server-only. Do not put it in browser code or commit it.
+5. Keep the service role key server-only. Do not put it in browser code or commit it. It is required for the account deletion action.
 
-The migration enables Row Level Security and creates the required policies. It also:
+The migrations enable Row Level Security and create the required policies. They also:
 
 - creates a profile automatically after email sign-up;
 - adds a group owner as its first member;
 - creates one persistent blend for every group;
 - creates one canonical pair blend when a friendship is accepted;
 - enforces the ten-member group limit at the database level.
+- preserve pending friend and group requests until they are answered;
+- create a pair blend when a friend request is accepted and revoke pair-blend access when the friendship is removed.
 
 For local development, copy `.env.example` to `.env.local` and fill in the two public Supabase values. Add `SUPABASE_SERVICE_ROLE_KEY` only if a server-side feature explicitly needs an administrative client.
 
