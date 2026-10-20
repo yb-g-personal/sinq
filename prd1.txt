@@ -1,0 +1,337 @@
+CONSOLIDATED WITH A FEW UPDATES
+
+Writing
+Sinq — Product Requirements Document (PRD)
+Product name: Sinq
+Product type: Free, cross-platform music taste blending website
+Status: Final product specification
+Primary platforms: Desktop and mobile web
+Development environment: Windows 11, Visual Studio Code
+Required animation library: Anime.js
+Core concept: Discover what your music taste says about your friends, build shared listening experiences, and create blends that evolve as everyone listens.
+1. Product overview
+Sinq is a free music taste blending platform that lets people connect their listening data with friends and groups to discover shared artists, tracks, genres, listening habits, and new music.
+Inspired by the simplicity of Spotify Blend, Sinq expands the experience with deeper taste analytics, persistent blends, flexible group creation, and music playlist export or synchronization where supported by the connected provider.
+Sinq should feel like a music discovery product rather than a conventional analytics dashboard. It should be visually distinctive, fast, social, and enjoyable to explore.
+Product principles
+Music first: Make discovery and shared listening the central experience.
+Insight over noise: Every statistic should communicate something useful.
+Persistent by default: Blends should evolve over time rather than being disposable reports.
+Free to use: Core functionality must not depend on a paid subscription.
+Privacy by design: Users control their connections, shared data, and access.
+Motion with purpose: Anime.js should make interactions feel polished without slowing down the experience.
+2. Goals and non-goals
+Goals
+Let users create accounts and establish unique usernames.
+Allow users to find, add, remove, and manage friends.
+Generate exactly one persistent one-to-one blend for each friend pair.
+Support unlimited groups, with up to 10 active members per group.
+Compare listening tastes across individuals and groups.
+Provide detailed, understandable music taste analytics.
+Refresh blends as new listening information becomes available.
+Let users pin, exclude, and manage tracks within a blend.
+Export or synchronize blends to supported music services.
+Work well on desktop, tablet, and mobile browsers.
+Use Anime.js for a consistent, accessible animation system.
+Non-goals for the initial release
+Building a complete music streaming service.
+Hosting or distributing copyrighted audio files.
+Replacing Spotify, Apple Music, or Last.fm.
+Guaranteeing access to historical listening data that providers do not expose.
+Presenting taste similarity as a scientific measure of friendship or personality.
+Requiring a paid plan for ordinary users to access core features.
+Using scraping or unofficial endpoints to bypass provider restrictions.
+3. Target users
+Primary audience
+People who enjoy discovering music through friends, comparing artists, making shared playlists, and exploring how their tastes overlap.
+Secondary audience
+Friend groups that share music regularly.
+Couples who want a shared music profile.
+Music enthusiasts who enjoy statistics and listening patterns.
+Online communities that want a shared musical identity.
+4. Accounts and identity
+Registration and authentication
+Users should be able to create an account through a supported authentication method. Email-based authentication should be available for the MVP, with additional methods considered later.
+Each account must have:
+A unique username.
+A display name.
+An optional profile picture.
+An optional short biography.
+Connected music provider accounts.
+Privacy and notification preferences.
+Username requirements
+Usernames must be unique.
+Usernames should support a clearly defined character set, such as letters, numbers, and underscores.
+Username comparisons should be case-insensitive.
+Users should be able to change their username, subject to availability and reasonable abuse prevention.
+Internal database identifiers must remain separate from usernames.
+Profile visibility
+Users must be able to control how their profile and listening information are shared. Sinq should distinguish between public profile details, friend-visible information, and private account data.
+A user disconnecting a music provider must be able to revoke that connection without deleting their Sinq account.
+5. Friends and social connections
+Adding friends
+Users should be able to:
+Search for users by username.
+Send friend requests.
+Accept or decline requests.
+View pending requests.
+Remove friends.
+Block users.
+Friendship relationships should be represented consistently in the database. A friendship must not be duplicated merely because both users initiate a request.
+Friend list
+Each friend entry should show:
+Display name and username.
+Profile picture, when available.
+Connected listening providers, where appropriate.
+Whether enough listening data is available to create meaningful comparisons.
+A shortcut to the pair's existing blend.
+Blocking and removal
+Blocking a user must prevent further interaction and restrict access to shared information as defined by the privacy model.
+Removing a friend must revoke ordinary friend-only access to the pair blend. Re-adding that person should restore access to the same pair record when appropriate, rather than creating a second blend.
+6. One-to-one blends
+Core rule: There must be exactly one persistent one-to-one blend per unordered pair of friends.
+For example, a blend between Alice and Ben is the same blend whether Alice opens it or Ben opens it.
+Requirements
+Every eligible friend pair has one canonical blend record.
+Both users see the same underlying blend, tracks, analytics, and history.
+Opening the blend from either account must not create another record.
+Repeated requests and simultaneous creation attempts must not create duplicates.
+Changing a time range, refreshing the data, or changing a playlist destination must not create a second pair blend.
+The blend persists as listening information changes.
+Removing a friendship restricts access according to the privacy rules.
+Re-friending should reuse the existing pair identity where appropriate.
+The database must enforce pair uniqueness. Application-level checks alone are insufficient because simultaneous requests could otherwise create duplicate records.
+Blend content
+Each pair blend should include:
+A blend name and cover artwork.
+Both participants' profile identities.
+A taste compatibility overview.
+Shared artists and tracks.
+Similarity and diversity metrics.
+Recommended discoveries.
+A generated track list.
+Last-refreshed information.
+Pinned and excluded tracks.
+Playlist export or synchronization controls.
+A history of meaningful changes, where feasible.
+Persistent behavior
+The blend should update as new listening information becomes available without creating a replacement blend.
+Refreshing a blend should preserve user choices such as pinned tracks and exclusions. The system should avoid unnecessary track reordering when changes in the underlying data are insignificant.
+7. Groups
+Users can create and participate in unlimited groups, subject to reasonable technical and abuse-prevention safeguards.
+Group limits
+There is no product-level cap on the number of groups a user can create or join.
+Each group can have a maximum of 10 active members, including its owner.
+The membership limit must be enforced on the server and at the database level where possible.
+Group creation and invitation acceptance must handle simultaneous requests safely.
+Group creation
+A group should support:
+A custom name.
+Optional description.
+Optional cover artwork.
+An owner.
+Members and invitations.
+A persistent group blend.
+Group-specific settings and privacy controls.
+Group membership
+Members should be able to view the group's blend according to the group's access rules. The owner should be able to invite and remove members and manage group settings.
+The product should define clear behavior for owner departure, invitation expiration, and group deletion.
+Group blend independence
+Every group has its own persistent blend. A group containing two people does not replace, duplicate, or modify the pair's one-to-one blend.
+For example, Alice and Ben can have:
+Their shared one-to-one blend.
+A group blend with Charlie and Dana.
+Another group blend with different members.
+Each is a separate entity with its own membership, settings, analytics, and track list.
+Group analytics
+Group blends should provide:
+Tracks shared by multiple members.
+Artists with broad group appeal.
+Tracks favored by a subset of members.
+Individual member representation.
+Overall group taste distribution.
+Diversity and discovery potential.
+Recommendations that help the group explore beyond its common favorites.
+The analytics must avoid making a single member's preferences invisible. Where practical, explain which members contribute to a recommendation or similarity result.
+8. Music service integrations
+Sinq should support music providers through documented APIs and authorized account connections.
+Integration availability depends on each provider's current API capabilities, access requirements, quotas, and policies. No feature should be advertised as supported until its full workflow has been tested.
+Last.fm
+Potential uses:
+Retrieving available listening statistics.
+Accessing permitted scrobble and top-track information.
+Building artist and track taste profiles.
+Tracking changes in listening preferences over time.
+Last.fm should primarily serve as a listening-data source. Playlist creation or editing should not be assumed to be available through it.
+Documentation: https://www.last.fm/api
+Spotify
+Potential uses, subject to API access and policy validation:
+Account authorization.
+Retrieving permitted profile, track, artist, or listening data.
+Looking up catalog metadata.
+Creating or updating playlists where supported.
+Linking users to tracks and playlists.
+Historical listening access, recommendations, playlist operations, and other capabilities must be checked against current API availability and access restrictions before implementation.
+Documentation: https://developer.spotify.com/documentation/web-api
+Developer policy: https://developer.spotify.com/policy
+Apple Music
+Potential uses, subject to implementation and entitlement requirements:
+MusicKit-based authorization.
+Catalog search and metadata lookup.
+User library access where permitted.
+Playlist creation or editing where supported.
+Documentation: https://developer.apple.com/musickit/
+Integration principles
+Never collect music service passwords.
+Use official authorization flows.
+Request only the permissions needed for each feature.
+Store tokens securely and server-side when required.
+Handle expired, revoked, and invalid credentials.
+Provide clear connection and disconnection controls.
+Never assume two services expose equivalent listening histories.
+Clearly identify the source and freshness of available data.
+Provide an honest explanation when a provider cannot supply sufficient information.
+MVP integration requirement
+The MVP must validate at least one complete listening-data workflow with real authorized accounts. It must not depend on hypothetical API capabilities.
+Playlist export or synchronization should only be presented as automated when the relevant provider's supported workflow has been implemented and verified.
+9. Music data normalization
+Different providers represent artists, tracks, albums, and listening history differently. Sinq needs a normalized internal music model.
+Track identity
+Where available, use provider identifiers and stable catalog metadata to identify tracks.
+A normalized track record may contain:
+Internal track ID.
+Track title.
+Primary artist and credited artists.
+Album title.
+Duration.
+Artwork reference.
+Release date, when available.
+Track identifiers from supported providers.
+Explicit-content metadata, when available.
+Provider links.
+Matching tracks across providers
+Matching should prioritize stable identifiers. When identifiers are unavailable, matching may use normalized artist names, track titles, album metadata, and duration.
+Fuzzy matching must be treated as uncertain. Sinq should avoid merging different versions, remixes, live recordings, or covers into the same track without sufficient evidence.
+Listening signals
+Listening signals may include:
+Scrobbles or plays reported by a provider.
+Track and artist frequency.
+Recently listened-to tracks.
+Top artists and tracks over supported time windows.
+Available genre or style metadata.
+Data freshness and source reliability.
+The application must distinguish actual listening events from inferred preferences and catalog metadata.
+10. Music taste analytics
+Analytics are a central feature of Sinq. The platform should provide more than a single percentage.
+Core metrics
+Artist overlap
+Measures how much the participants' artist preferences intersect.
+Track overlap
+Measures the degree of shared track preference, using available listening signals and catalog matches.
+Genre and style similarity
+Compares the distribution of genres or style labels, while accounting for inconsistent or missing metadata across providers.
+Listening-pattern similarity
+Compares available patterns such as repeat listening, artist concentration, discovery activity, or preference for older versus newer music.
+Taste diversity
+Describes how broadly each participant's listening is distributed across artists, genres, or styles.
+Discovery potential
+Identifies artists and tracks that one participant or group member enjoys and others have not explored, where the available data supports that inference.
+Member representation
+For group blends, measures how fairly the generated selection reflects the participating members' preferences.
+Time ranges
+Where the provider supports it, users should be able to explore different time windows, such as:
+Recent listening.
+The last several months.
+Long-term listening history.
+The exact options must depend on the data available. Sinq must not imply that a provider offers a particular historical range when it does not.
+Score explanations
+Every major score should include a concise explanation of what it measures and, where useful, how it is calculated.
+Scores should be presented as descriptive estimates based on available data, not objective judgments about friendships or personal compatibility.
+Missing data must be clearly distinguished from a genuinely low similarity score.
+11. Blend generation engine
+The blend engine turns normalized listening information into a useful, balanced track list.
+Inputs
+Participants' listening signals.
+Artist and track preferences.
+Shared and individual favorites.
+Available catalog metadata.
+Group membership and blend settings.
+Pinned tracks.
+Excluded tracks.
+Optional destination constraints.
+Selection principles
+The engine should balance:
+Familiar tracks that multiple participants enjoy.
+Tracks that represent individual members.
+Tracks that introduce worthwhile discoveries.
+Diversity across artists and styles.
+Appropriate representation of less vocal group members.
+Track availability on the chosen destination service.
+The system should avoid filling the entire blend with the most popular artist or with tracks contributed by only one participant.
+Pinned and excluded tracks
+Users should be able to pin tracks to preserve them across refreshes and exclude tracks from future generated selections.
+These choices should be stored separately from the algorithm's ordinary ranking so that a refresh does not silently discard them.
+For group blends, the product must define who can pin or exclude tracks and whether those changes apply to everyone. The initial implementation should use clear, predictable permissions.
+Blend explanations
+Where feasible, each selected track should include a short reason, such as:
+Shared favorite.
+Strong match for several members.
+Discovery from a specific member.
+Adds variety to the blend.
+Explanations should reflect actual data and not be fabricated.
+12. Persistent refresh and synchronization
+Sinq blends are long-lived objects. Refreshing them should update their content, not replace them.
+Refresh behavior
+Retrieve newly available listening data.
+Recompute taste profiles and analytics.
+Generate an updated selection.
+Preserve pins and exclusions.
+Avoid unnecessary reordering.
+Record the refresh time and result.
+Handle provider errors without corrupting the existing blend.
+Refresh triggers
+Possible triggers include:
+A user manually refreshing a blend.
+A scheduled background refresh.
+A successful music provider data update.
+A relevant change in group membership or blend settings.
+Refresh frequency should respect provider rate limits and infrastructure constraints.
+Idempotency and concurrency
+Repeated or simultaneous refresh jobs must not produce duplicate track records, conflicting synchronization jobs, or inconsistent blend state.
+Use background jobs, idempotency keys, database transactions, and appropriate locking or concurrency controls where needed.
+Stale data
+The interface must show when information was last refreshed. If a provider is unavailable, retain the last valid blend and explain that the data may be stale rather than presenting an empty or broken result.
+13. Playlist export and synchronization
+Users should be able to take their blend outside Sinq.
+Export options
+Depending on provider support, offer:
+Create a playlist in a connected music service.
+Update a playlist previously created by Sinq.
+Copy a track list.
+Export a CSV containing available track metadata and links.
+Open individual tracks in their source service.
+Synchronization modes
+Where the provider supports the required operations, offer:
+Manual: The user explicitly exports or updates a playlist.
+Review before sync: Sinq shows the proposed changes and asks for confirmation.
+Automatic: Sinq updates a linked destination after a successful blend refresh, if supported and enabled by the user.
+Safety requirements
+Clearly identify the destination playlist.
+Explain whether synchronization creates a new playlist or modifies an existing one.
+Avoid destructive overwrites.
+Do not delete user-added tracks without clear authorization.
+Preserve the destination link and synchronization status.
+Show useful error messages when tracks are unavailable.
+Allow users to disconnect a destination.
+Provide copy and CSV fallbacks when automation is unavailable.
+14. Navigation and information architecture
+The interface should remain simple even as analytics and social features grow.
+Main navigation
+Home / Dashboard
+A summary of friends, recent activity, available blends, and recommended next actions.
+Friends
+Search, requests, friend management, and shortcuts to pair blends.
+Groups
+Group creation, membership, invitations, and group blend access.
+Blends
+A central view of existing one-to-one and group blends, with filters and sorting
