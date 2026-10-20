@@ -4,8 +4,18 @@ import { fetchLastFmRecentTracks } from '@/lib/providers/lastfm';
 export async function refreshBlend(blendId: string, lastFmUsernames: string[]) {
   const supabase = await createClient();
   const idempotencyKey = `${blendId}:${new Date().toISOString().slice(0, 13)}`;
-  const { data: job, error: jobError } = await supabase.from('refresh_jobs').insert({ blend_id: blendId, idempotency_key: idempotencyKey, status: 'running' }).select('id').single();
-  if (jobError) return { ok: false, error: jobError.message };
+  let { data: job, error: jobError } = await supabase.from('refresh_jobs').insert({ blend_id: blendId, idempotency_key: idempotencyKey, status: 'running' }).select('id').single();
+  if (jobError) {
+    const { data: existingJob } = await supabase.from('refresh_jobs').select('id, status').eq('idempotency_key', idempotencyKey).maybeSingle();
+    if (!existingJob) return { ok: false, error: jobError.message };
+    if (existingJob.status === 'running') return { ok: false, error: 'A listening sync is already running for this blend.' };
+    if (existingJob.status === 'completed') return { ok: true, importedSignals: 0 };
+    const retry = await supabase.from('refresh_jobs').update({ status: 'running', error_message: null, completed_at: null }).eq('id', existingJob.id).select('id').single();
+    job = retry.data;
+    jobError = retry.error;
+    if (jobError || !job) return { ok: false, error: jobError?.message ?? 'Could not restart the listening sync.' };
+  }
+  if (!job) return { ok: false, error: 'Could not create a listening sync job.' };
   try {
     const results = await Promise.all(lastFmUsernames.map(async (username) => ({ username, tracks: await fetchLastFmRecentTracks(username) })));
     const signals = results.flatMap((result) => result.tracks);
