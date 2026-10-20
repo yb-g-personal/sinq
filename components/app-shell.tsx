@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { currentProfile, sampleMode } from '@/lib/sample-data';
 import type { Profile } from '@/lib/types';
 
-const links = [{ href: '/', label: 'Home', icon: Home }, { href: '/blends', label: 'Blends', icon: Layers3 }, { href: '/friends', label: 'Friends', icon: Users }, { href: '/groups', label: 'Groups', icon: Disc3 }, { href: '/services', label: 'Services', icon: SlidersHorizontal }];
+const links = [{ href: '/', label: 'Home', icon: Home }, { href: '/blends', label: 'Blends', icon: Layers3 }, { href: '/friends', label: 'Friends', icon: Users }, { href: '/groups', label: 'Groups', icon: Disc3 }, { href: '/services', label: 'Services', icon: SlidersHorizontal }] as const;
 
 export function AppShell({ children, profile }: { children: React.ReactNode; profile?: Profile | null }) {
   const pathname = usePathname();
