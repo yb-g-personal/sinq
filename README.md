@@ -82,6 +82,8 @@ After the first deployment, pushing changes to GitHub redeploys automatically.
 
 Without Supabase environment variables, sinq shows clearly labelled sample data so the UI can still be explored. Authentication, persistence, provider refresh, and server actions require the Supabase variables.
 
+With Supabase variables configured, the home, blends, groups, friends, services, and settings screens use live database data. Users can update their profile, send friend requests by username, create groups, save a Last.fm username, and sync recent Last.fm listening signals. The generated blend calculations and playlist exports remain follow-up product work; the current sync stores provider signals and refresh metadata for those features.
+
 ## Local development
 
 ```powershell

@@ -1,0 +1,92 @@
+import { createClient } from '@/lib/supabase/server';
+import type { Blend, Profile, Track } from '@/lib/types';
+
+type ProfileRow = {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+};
+
+type BlendRow = {
+  id: string;
+  kind: 'pair' | 'group';
+  name: string;
+  description: string | null;
+  overlap: number;
+  last_refreshed_at: string | null;
+  group_id: string | null;
+  pair_low: string | null;
+  pair_high: string | null;
+};
+
+function initials(displayName: string) {
+  return displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+}
+
+export function toProfile(row: ProfileRow): Profile {
+  return { id: row.id, displayName: row.display_name, username: row.username, initials: initials(row.display_name), tone: 'bg-[#dec4f7]', status: 'Listening now' };
+}
+
+function formatUpdated(value: string | null) {
+  return value ? new Date(value).toLocaleDateString() : 'not refreshed';
+}
+
+function toBlend(row: BlendRow, members: string[] = [], tracks: Track[] = []): Blend {
+  return {
+    id: row.id,
+    kind: row.kind,
+    name: row.name,
+    members,
+    overlap: row.overlap,
+    lastUpdated: formatUpdated(row.last_refreshed_at),
+    description: row.description ?? 'A shared listening room that changes as your taste evolves.',
+    tracks,
+    scores: [
+      { label: 'Shared signal', value: row.overlap, explanation: 'Shared listening signals currently available for this blend.' },
+      { label: 'Discovery potential', value: Math.max(0, 100 - row.overlap), explanation: 'Tracks from the edges of each listening profile can open a new path.' }
+    ]
+  };
+}
+
+export async function getCurrentProfile() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase.from('profiles').select('id, username, display_name, avatar_url').eq('id', user.id).single();
+  if (error) throw new Error(error.message);
+  return toProfile(data as ProfileRow);
+}
+
+export async function getBlends() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('blends').select('id, kind, name, description, overlap, last_refreshed_at, group_id, pair_low, pair_high').order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data as BlendRow[]).map((row) => toBlend(row));
+}
+
+export async function getBlend(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('blends').select('id, kind, name, description, overlap, last_refreshed_at, group_id, pair_low, pair_high, blend_tracks(state, reason, position, tracks(id, title, artist, album, artwork_url))').eq('id', id).single();
+  if (error) return null;
+  const row = data as BlendRow & { blend_tracks: Array<{ state: 'active' | 'excluded' | 'pinned'; reason: string; position: number; tracks: { id: string; title: string; artist: string; album: string | null } | null }> };
+  const memberIds = row.kind === 'group' && row.group_id
+    ? (await supabase.from('group_members').select('profiles(display_name)').eq('group_id', row.group_id)).data?.map((member) => (member.profiles as unknown as { display_name: string }).display_name) ?? []
+    : [];
+  const tracks = row.blend_tracks.filter((item) => item.tracks).sort((a, b) => a.position - b.position).map((item) => ({
+    id: item.tracks!.id, title: item.tracks!.title, artist: item.tracks!.artist, album: item.tracks!.album ?? '', reason: item.reason, pinned: item.state === 'pinned', excluded: item.state === 'excluded'
+  }));
+  return toBlend(row, memberIds, tracks);
+}
+
+export async function getFriends() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase.from('friendships').select('user_low, user_high, profiles_low:profiles!friendships_user_low_fkey(id, username, display_name, avatar_url), profiles_high:profiles!friendships_user_high_fkey(id, username, display_name, avatar_url)').eq('status', 'accepted').or(`user_low.eq.${user.id},user_high.eq.${user.id}`);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((friendship) => {
+    const row = friendship as { user_low: string; profiles_low: ProfileRow; profiles_high: ProfileRow };
+    return toProfile(row.user_low === user.id ? row.profiles_high : row.profiles_low);
+  });
+}
