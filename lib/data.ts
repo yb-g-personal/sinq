@@ -69,7 +69,15 @@ export async function getBlend(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase.from('blends').select('id, kind, name, description, overlap, last_refreshed_at, group_id, pair_low, pair_high, blend_tracks(state, reason, position, tracks(id, title, artist, album, artwork_url))').eq('id', id).single();
   if (error) return null;
-  const row = data as BlendRow & { blend_tracks: Array<{ state: 'active' | 'excluded' | 'pinned'; reason: string; position: number; tracks: { id: string; title: string; artist: string; album: string | null } | null }> };
+  const row = {
+    ...data,
+    blend_tracks: data.blend_tracks.map((item) => ({
+      state: item.state as 'active' | 'excluded' | 'pinned',
+      reason: item.reason as string,
+      position: item.position as number,
+      tracks: Array.isArray(item.tracks) ? item.tracks[0] ?? null : item.tracks
+    }))
+  };
   const memberIds = row.kind === 'group' && row.group_id
     ? (await supabase.from('group_members').select('profiles(display_name)').eq('group_id', row.group_id)).data?.map((member) => (member.profiles as unknown as { display_name: string }).display_name) ?? []
     : [];
