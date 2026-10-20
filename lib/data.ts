@@ -94,7 +94,17 @@ export async function getFriends() {
   const { data, error } = await supabase.from('friendships').select('user_low, user_high, profiles_low:profiles!friendships_user_low_fkey(id, username, display_name, avatar_url), profiles_high:profiles!friendships_user_high_fkey(id, username, display_name, avatar_url)').eq('status', 'accepted').or(`user_low.eq.${user.id},user_high.eq.${user.id}`);
   if (error) throw new Error(error.message);
   return (data ?? []).map((friendship) => {
-    const row = friendship as { user_low: string; profiles_low: ProfileRow; profiles_high: ProfileRow };
+    const raw = friendship as {
+      user_low: string;
+      profiles_low: ProfileRow | ProfileRow[];
+      profiles_high: ProfileRow | ProfileRow[];
+    };
+    const row = {
+      user_low: raw.user_low,
+      profiles_low: Array.isArray(raw.profiles_low) ? raw.profiles_low[0] : raw.profiles_low,
+      profiles_high: Array.isArray(raw.profiles_high) ? raw.profiles_high[0] : raw.profiles_high
+    };
+    if (!row.profiles_low || !row.profiles_high) throw new Error('Friend profile data is incomplete');
     return toProfile(row.user_low === user.id ? row.profiles_high : row.profiles_low);
   });
 }
