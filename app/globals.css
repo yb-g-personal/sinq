@@ -12,4 +12,8 @@ a { color:inherit; text-decoration:none; }
 .hairline { border-color:var(--line); }
 .label { color:#887a91; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; }
 .focus-ring:focus-visible { outline:2px solid var(--lavender); outline-offset:3px; }
+.notification-toast { animation: notification-in 240ms ease-out both; }
+@keyframes notification-in { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.loading-mark { animation: loading-pulse 900ms ease-in-out infinite alternate; }
+@keyframes loading-pulse { from { opacity:.25; transform:scale(.75); } to { opacity:1; transform:scale(1); } }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; } }
