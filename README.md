@@ -59,11 +59,13 @@ npx vercel
 ```text
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_SITE_URL
 SUPABASE_SERVICE_ROLE_KEY
 LASTFM_API_KEY
 ```
 
-6. Deploy. Vercel will provide a public `vercel.app` URL.
+6. In Supabase **Authentication → URL Configuration**, add the deployed `https://*.vercel.app/sign-in` callback URL (or the exact project URL) to **Redirect URLs**. Set `NEXT_PUBLIC_SITE_URL` to the canonical deployed URL, without a trailing slash.
+7. Deploy. Vercel will provide a public `vercel.app` URL.
 
 ## About drag and drop hosting
 
@@ -82,7 +84,7 @@ After the first deployment, pushing changes to GitHub redeploys automatically.
 
 Without Supabase environment variables, sinq shows clearly labelled sample data so the UI can still be explored. Authentication, persistence, provider refresh, and server actions require the Supabase variables.
 
-With Supabase variables configured, the home, blends, groups, friends, services, and settings screens use live database data. Users can update their profile, send friend requests by username, create groups, save a Last.fm username, and sync recent Last.fm listening signals. The generated blend calculations and playlist exports remain follow-up product work; the current sync stores provider signals and refresh metadata for those features.
+With Supabase variables configured, the home, blends, groups, friends, services, and settings screens use live database data. Users can update their profile, send friend requests by username, create groups, save a Last.fm username, and sync recent Last.fm listening signals for their pair and group blends. Set `LASTFM_API_KEY` in Vercel for sync to work. The generated blend calculations and playlist exports remain follow-up product work; the current sync stores provider signals and refresh metadata for those features.
 
 ## Local development
 
