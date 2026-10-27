@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AppShell } from '@/components/app-shell';
-import { UserPlus, UserCheck, UserX, Clock } from 'lucide-react';
+import { UserPlus, UserCheck, UserX, Clock, UserMinus, Ban } from 'lucide-react';
 import { FriendRequestCard } from '@/components/friend-request-card';
 import { FriendCard } from '@/components/friend-card';
-import { getCurrentProfile } from '@/lib/data';
 
 interface FriendRequest {
   id: string;
@@ -36,10 +35,6 @@ export default function FriendsPage() {
   const [receivedRequests, setReceivedRequests] = useState<FriendRequest[]>([]);
   const [sentRequests, setSentRequests] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddFriend, setShowAddFriend] = useState(false);
-  const [username, setUsername] = useState('');
-  const [adding, setAdding] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -74,35 +69,6 @@ export default function FriendsPage() {
 
     loadData();
   }, []);
-
-  async function handleAddFriend(e: React.FormEvent) {
-    e.preventDefault();
-    setAdding(true);
-    setAddError(null);
-    try {
-      const res = await fetch('/api/friends/requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to send friend request');
-      }
-      setUsername('');
-      setShowAddFriend(false);
-      // Refresh requests
-      const requestsRes = await fetch('/api/friends/requests');
-      if (requestsRes.ok) {
-        const data = await requestsRes.json();
-        setSentRequests(data.sent);
-      }
-    } catch (e) {
-      setAddError(e instanceof Error ? e.message : 'Failed to send friend request');
-    } finally {
-      setAdding(false);
-    }
-  }
 
   async function handleAcceptFriend(requestId: string) {
     const res = await fetch(`/api/friends/${requestId}/accept`, { method: 'POST' });
@@ -156,7 +122,6 @@ export default function FriendsPage() {
   }
 
   async function handleBlockUser(friendshipId: string) {
-    // For blocking, we need the username. We'll get it from the friend data
     const friend = friends.find(f => f.friendshipId === friendshipId);
     if (!friend) return;
     const res = await fetch('/api/friends/block', {
@@ -205,33 +170,13 @@ export default function FriendsPage() {
           </div>
         </div>
 
-        {/* Add Friend Form */}
-        <form onSubmit={handleAddFriend} className="mb-8 flex gap-3 border-y border-line py-5">
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Search by username"
-            className="flex-1 border border-line bg-surface px-3 py-3 text-sm outline-none focus:border-lavender"
-          />
-          <button
-            type="submit"
-            disabled={adding || !username.trim()}
-            className="bg-purple px-4 py-2 text-xs text-ink disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {adding ? 'Sending...' : 'Send request'}
-          </button>
-        </form>
-
-        {addError && (
-          <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
-            {addError}
-          </div>
-        )}
-
         {/* Received Friend Requests */}
         {receivedRequests.length > 0 && (
           <div className="mb-8">
-            <h2 className="label mb-4">Friend Requests</h2>
+            <h2 className="label mb-4 flex items-center gap-2">
+              <UserCheck size={16} strokeWidth={1.5} />
+              Friend Requests
+            </h2>
             <div className="border border-line rounded-xl overflow-hidden">
               {receivedRequests.map((request) => (
                 <FriendRequestCard
@@ -248,7 +193,10 @@ export default function FriendsPage() {
         {/* Sent Friend Requests */}
         {sentRequests.length > 0 && (
           <div className="mb-8">
-            <h2 className="label mb-4">Sent Requests</h2>
+            <h2 className="label mb-4 flex items-center gap-2">
+              <Clock size={16} strokeWidth={1.5} />
+              Sent Requests
+            </h2>
             <div className="border border-line rounded-xl overflow-hidden">
               {sentRequests.map((request) => (
                 <div key={request.id} className="flex items-center justify-between gap-4 border-b border-line py-4 last:border-b-0">

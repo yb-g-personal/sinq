@@ -2,11 +2,18 @@
 
 import { useState } from 'react';
 import { Check, X, UserPlus } from 'lucide-react';
-import type { Profile } from '@/lib/types';
+
+interface FriendRequestRequester {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+  initials: string;
+}
 
 interface FriendRequest {
   id: string;
-  requester: Profile;
+  requester: FriendRequestRequester;
   created_at: string;
 }
 
@@ -51,7 +58,7 @@ export function FriendRequestCard({
         </div>
         <div className="min-w-0">
           <strong className="serif block truncate text-base font-normal">
-            {request.requester.displayName}
+            {request.requester.display_name}
           </strong>
           <span className="block truncate text-xs text-quiet">
             @{request.requester.username} wants to be your friend
