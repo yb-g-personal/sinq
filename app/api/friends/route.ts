@@ -24,6 +24,7 @@ export async function GET() {
       username: profile.username,
       initials: profile.display_name.split(/\s+/).map((part: string) => part[0]).join('').slice(0, 2).toUpperCase(),
       tone: 'bg-[#dec4f7]',
+      status: 'Listening now',
       friendshipId: friendship.id,
     };
   }).filter(Boolean);

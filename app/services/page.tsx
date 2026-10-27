@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AppShell } from '@/components/app-shell';
-import { RefreshCw, Link2, Unlink2, Music, CheckCircle, AlertCircle } from 'lucide-react';
+import { RefreshCw, Link2, Unlink2, Music, CheckCircle, AlertCircle, Info, AlertTriangle, Clock } from 'lucide-react';
 
 export default function ServicesPage() {
   const [profile, setProfile] = useState<any>(null);
@@ -15,6 +15,7 @@ export default function ServicesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -78,6 +79,7 @@ export default function ServicesPage() {
 
   async function handleDisconnect() {
     setDisconnecting(true);
+    setShowDisconnectConfirm(false);
     try {
       const res = await fetch('/api/services/lastfm', { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to disconnect Last.fm');
@@ -116,6 +118,20 @@ export default function ServicesPage() {
     }
   }
 
+  function getSyncStatus() {
+    if (!lastfmLastSynced) return { text: 'Never synced', className: 'text-quiet' };
+    const lastSync = new Date(lastfmLastSynced);
+    const now = new Date();
+    const diff = now.getTime() - lastSync.getTime();
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (days > 7) return { text: `Last synced ${days}d ago`, className: 'text-amber-400' };
+    if (days > 1) return { text: `Last synced ${days}d ago`, className: 'text-quiet' };
+    if (hours > 0) return { text: `Last synced ${hours}h ago`, className: 'text-quiet' };
+    return { text: 'Just synced', className: 'text-signal' };
+  }
+
   if (loading) {
     return (
       <AppShell profile={profile}>
@@ -132,6 +148,8 @@ export default function ServicesPage() {
       </AppShell>
     );
   }
+
+  const syncStatus = getSyncStatus();
 
   return (
     <AppShell profile={profile}>
@@ -159,65 +177,108 @@ export default function ServicesPage() {
             </div>
 
             {lastfmConnected ? (
-              <div className="mt-5 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                <div className="flex items-center gap-2 text-sm text-quiet">
-                  <Link2 size={14} strokeWidth={1.5} />
-                  <span>@{lastfmUsername}</span>
-                  {lastfmLastSynced && (
-                    <>
-                      <span className="text-line mx-2">·</span>
-                      <RefreshCw size={12} strokeWidth={1.5} />
-                      <span>Last synced {new Date(lastfmLastSynced).toLocaleString()}</span>
-                    </>
-                  )}
+              <div className="mt-5 space-y-4">
+                {/* Connection Status */}
+                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-4 bg-surface-2/30 rounded-xl border border-line/50">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Link2 size={14} strokeWidth={1.5} className="text-quiet" />
+                    <span className="font-mono">@{lastfmUsername}</span>
+                    <span className="text-line mx-2">·</span>
+                    <span className={`flex items-center gap-1 ${syncStatus.className}`}>
+                      <Clock size={12} strokeWidth={1.5} />
+                      {syncStatus.text}
+                    </span>
+                  </div>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={handleRefresh}
+                      disabled={refreshing}
+                      className="flex-1 sm:flex-none border border-lavender px-4 py-2 text-xs text-lavender hover:bg-lavender/10 disabled:opacity-50 flex items-center justify-center gap-1"
+                    >
+                      {refreshing ? (
+                        <>
+                          <RefreshCw size={14} strokeWidth={2} className="animate-spin inline-block mr-1" />
+                          Syncing...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw size={14} strokeWidth={1.5} className="inline-block mr-1" />
+                          Sync recent listening
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setShowDisconnectConfirm(true)}
+                      disabled={disconnecting}
+                      className="flex-1 sm:flex-none border border-red-400/50 text-red-400 px-4 py-2 text-xs hover:bg-red-400/10 disabled:opacity-50 flex items-center justify-center gap-1"
+                    >
+                      {disconnecting ? 'Disconnecting...' : (
+                        <>
+                          <Unlink2 size={14} strokeWidth={1.5} className="inline-block mr-1" />
+                          Disconnect
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={handleRefresh}
-                    disabled={refreshing}
-                    className="flex-1 sm:flex-none border border-lavender px-4 py-2 text-xs text-lavender hover:bg-lavender/10 disabled:opacity-50"
-                  >
-                    {refreshing ? (
-                      <>
-                        <RefreshCw size={14} strokeWidth={2} className="animate-spin inline-block mr-1" />
-                        Syncing...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw size={14} strokeWidth={1.5} className="inline-block mr-1" />
-                        Sync recent listening
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={handleDisconnect}
-                    disabled={disconnecting}
-                    className="flex-1 sm:flex-none border border-red-400/50 text-red-400 px-4 py-2 text-xs hover:bg-red-400/10 disabled:opacity-50 flex items-center justify-center gap-1"
-                  >
-                    {disconnecting ? 'Disconnecting...' : (
-                      <>
-                        <Unlink2 size={14} strokeWidth={1.5} className="inline-block mr-1" />
-                        Disconnect
-                      </>
-                    )}
-                  </button>
+
+                {/* Sync Details */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="p-3 bg-surface-2/30 border border-line/50 rounded-lg">
+                    <div className="flex items-center gap-2 text-xs text-quiet mb-1">
+                      <Info size={12} strokeWidth={1.5} />
+                      <span>What gets synced</span>
+                    </div>
+                    <ul className="text-xs text-quiet space-y-1 pl-4 list-disc">
+                      <li>Your most recent ~200 tracks</li>
+                      <li>Track titles, artists, albums</li>
+                      <li>Listening timestamps</li>
+                    </ul>
+                  </div>
+                  <div className="p-3 bg-surface-2/30 border border-line/50 rounded-lg">
+                    <div className="flex items-center gap-2 text-xs text-quiet mb-1">
+                      <AlertTriangle size={12} strokeWidth={1.5} className="text-amber-400" />
+                      <span>Privacy note</span>
+                    </div>
+                    <p className="text-xs text-quiet">
+                      Your Last.fm username is stored securely. We never post on your behalf or access private data.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Sync Impact */}
+                <div className="p-3 bg-purple/10 border border-purple/30 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm text-purple mb-2">
+                    <RefreshCw size={14} strokeWidth={1.5} />
+                    <span>Sync updates all your blends</span>
+                  </div>
+                  <p className="text-xs text-quite/80">
+                    When you sync, we fetch your recent tracks from Last.fm and recompute overlap for all your pair and group blends.
+                  </p>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleConnect} className="mt-5 flex gap-3">
-                <input
-                  value={lastfmUsername}
-                  onChange={(e) => setLastfmUsername(e.target.value)}
-                  required
-                  placeholder="Last.fm username"
-                  className="flex-1 border border-line bg-surface px-3 py-3 text-sm outline-none focus:border-lavender"
-                />
+              <form onSubmit={handleConnect} className="mt-5 flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                  <label htmlFor="lastfm-username" className="block text-sm mb-1">
+                    Last.fm Username
+                  </label>
+                  <input
+                    id="lastfm-username"
+                    value={lastfmUsername}
+                    onChange={(e) => setLastfmUsername(e.target.value)}
+                    required
+                    placeholder="your_lastfm_username"
+                    className="w-full border border-line bg-surface px-3 py-3 text-sm outline-none focus:border-lavender"
+                  />
+                  <p className="text-xs text-quiet mt-1">Find this on your Last.fm profile page</p>
+                </div>
                 <button
                   type="submit"
                   disabled={connecting || !lastfmUsername.trim()}
-                  className="bg-purple px-4 py-2 text-xs text-ink disabled:opacity-50"
+                  className="bg-purple px-4 py-2 text-xs text-ink disabled:opacity-50 whitespace-nowrap self-end"
                 >
-                  {connecting ? 'Connecting...' : 'Save username'}
+                  {connecting ? 'Connecting...' : 'Connect Last.fm'}
                 </button>
               </form>
             )}
@@ -226,6 +287,54 @@ export default function ServicesPage() {
               <div className={`mt-4 p-3 rounded-lg text-sm ${error ? 'bg-red-500/10 border border-red-500/30 text-red-400' : 'bg-green-500/10 border border-green-500/30 text-green-400'} flex items-center gap-2`}>
                 {error ? <AlertCircle size={16} strokeWidth={2} /> : <CheckCircle size={16} strokeWidth={2} />}
                 {error || success}
+              </div>
+            )}
+
+            {/* Disconnect Confirmation Modal */}
+            {showDisconnectConfirm && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setShowDisconnectConfirm(false)}>
+                <div
+                  className="w-full max-w-md bg-ink border border-line rounded-2xl overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="disconnect-title"
+                >
+                  <div className="p-6 border-b border-line">
+                    <h2 id="disconnect-title" className="serif text-xl font-normal text-white">
+                      Disconnect Last.fm?
+                    </h2>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                      <AlertTriangle size={20} strokeWidth={1.5} className="text-amber-400 shrink-0 mt-0.5" />
+                      <div className="text-sm text-quiet space-y-2">
+                        <p><strong className="text-white">This will:</strong></p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                          <li>Remove your Last.fm username from your account</li>
+                          <li>Stop future automatic syncs</li>
+                          <li>Keep existing blend data (tracks already imported)</li>
+                        </ul>
+                        <p>You can reconnect anytime by entering your username again.</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={() => setShowDisconnectConfirm(false)}
+                        className="flex-1 focus-ring border border-line text-quiet py-2.5 rounded-lg hover:bg-surface-2 hover:text-white transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleDisconnect}
+                        disabled={disconnecting}
+                        className="flex-1 focus-ring bg-red-500/20 border border-red-500/50 text-red-400 py-2.5 rounded-lg hover:bg-red-500/30 hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

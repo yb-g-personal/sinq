@@ -26,6 +26,7 @@ interface Friend {
   username: string;
   initials: string;
   tone: string;
+  status: string;
   friendshipId: string;
 }
 
