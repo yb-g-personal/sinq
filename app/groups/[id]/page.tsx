@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { AppShell } from '@/components/app-shell';
-import { Users, UserPlus, Link2, Settings, Copy, Check, X, MoreVertical, Trash2, Crown, ArrowUpRight, Layers3, Mail } from 'lucide-react';
+import { Users, UserPlus, UserMinus, Link2, Settings, Copy, Check, X, MoreVertical, Trash2, Crown, ArrowUpRight, Layers3, Mail } from 'lucide-react';
 import { InviteLinkDialog } from '@/components/invite-link-dialog';
 import { GroupInviteCard } from '@/components/group-invite-card';
 

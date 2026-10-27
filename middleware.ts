@@ -28,7 +28,31 @@ export async function middleware(request: NextRequest) {
   );
 
   // Refresh session if expired - required for Server Components
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Protected routes that require authentication
+  const protectedPaths = ['/', '/blends', '/friends', '/groups', '/services', '/settings'];
+  const isProtectedPath = protectedPaths.some(path =>
+    request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith(path + '/')
+  );
+
+  // Public paths that don't require authentication
+  const publicPaths = ['/sign-in', '/sign-up'];
+  const isPublicPath = publicPaths.some(path =>
+    request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith(path + '/')
+  );
+
+  // Redirect unauthenticated users from protected routes to sign-in
+  if (isProtectedPath && !user) {
+    const redirectUrl = new URL('/sign-in', request.url);
+    redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Redirect authenticated users away from auth pages
+  if (isPublicPath && user) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
 
   return supabaseResponse;
 }
@@ -41,8 +65,7 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - api (API routes)
-     * - sign-in, sign-up (public auth pages)
      */
-    '/((?!_next/static|_next/image|favicon.ico|api|sign-in|sign-up).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api).*)',
   ],
 };
